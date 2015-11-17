@@ -27,7 +27,8 @@ use Mix.Config
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-#     import_config "#{Mix.env}.exs"
+import_config "#{Mix.env}.exs"
+
 config :lager,
   handlers: [
     {:lager_file_backend, [
@@ -40,10 +41,3 @@ config :lager,
 config :exlager,
   level: :debug,
   truncation_size: 8096
-
-config :ssdb,
-  host: '127.0.0.1',
-  port: 6380,
-  pool_size: 5,
-  password: nil,
-  is_reconnect: true
