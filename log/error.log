@@ -1,0 +1,1 @@
+2015-11-17 15:31:36.668 [error] <0.167.0> Supervisor 'Elixir.Logger.Supervisor' had child undefined started with 'Elixir.Logger.Watcher':watcher(error_logger, 'Elixir.Logger.ErrorHandler', {true,false,500}, link) at <0.172.0> exit with reason normal in context child_terminated

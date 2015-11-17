@@ -14,7 +14,7 @@ defmodule ProxyPool.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [applications: [:logger, :ssdb]]
   end
 
   # Dependencies can be Hex packages:
@@ -27,6 +27,10 @@ defmodule ProxyPool.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    []
+    [
+      { :ssdb, git: "https://github.com/chashu-code/ssdb-client-elixir.git"},
+      { :lager, git: "git://github.com/basho/lager.git", tag: "3.0.1", override: true},
+      { :exlager, git: "https://github.com/khia/exlager.git"}
+    ]
   end
 end
