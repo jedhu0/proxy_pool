@@ -135,6 +135,8 @@ defmodule ProxyPoolWorker do
         {:error, %HTTPoison.Error{reason: reason}} ->
           Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
           check_single_invalid(proxy, (retry_time - 1))
+         {:error, :badarg} ->
+           Lager.error "check_invalid error badarg"
     end
   end
 
