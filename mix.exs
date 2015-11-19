@@ -14,7 +14,15 @@ defmodule ProxyPool.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :ssdb, :hackney, :httpoison, :cowboy]]
+    apps = [:logger, :ssdb, :hackney, :httpoison, :cowboy]
+    mod = {:mod, {ProxyPool, []} }
+
+    case Mix.env do
+      :test ->
+        [{:applications, apps}]
+      _ ->
+        [{:applications, apps}, mod]
+    end
   end
 
   # Dependencies can be Hex packages:

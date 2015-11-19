@@ -96,6 +96,29 @@ defmodule ProxyPoolWorker do
     {:noreply, state}
   end
 
+  def handle_info({:check_invalid_callback, result, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=_state) do
+    # Lager.info "invalid_list -> #{Set.size(invalid_list)}"
+
+    case result do
+      "success" ->
+        new_invalid_list = Set.delete invalid_list, proxy
+        new_avaliable_list = Set.put avaliable_list, proxy
+        # update proxy list
+        new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: new_invalid_list}
+      "fail" ->
+        # retry 3 times to ensure the proxy cannot work,
+        # so remove this proxy from invalid_list
+        # TODO remove proxy from ssdb
+        new_invalid_list = Set.delete invalid_list, proxy
+        new_state = %ProxyLists{avaliable: avaliable_list, invalid: new_invalid_list}
+    end
+
+    # will have problem when multiple call arrived
+    Process.send_after(:proxy_pool, :check_invalid_list, @interval)
+
+    {:noreply, new_state}
+  end
+
   def check_single_invalid(proxy, retry_time) when retry_time > 0 do
     Lager.info "check_single_invalid retry_time #{inspect retry_time}"
     case HTTPoison.request(:get, @test_host, "", [],
@@ -119,29 +142,6 @@ defmodule ProxyPoolWorker do
     Lager.info "check_single_invalid proxy -> #{inspect proxy} fail"
     # callback check_invalid_list
     send :proxy_pool, {:check_invalid_callback, "fail", proxy}
-  end
-
-  def handle_info({:check_invalid_callback, result, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=_state) do
-    # Lager.info "invalid_list -> #{Set.size(invalid_list)}"
-
-    case result do
-      "success" ->
-        new_invalid_list = Set.delete invalid_list, proxy
-        new_avaliable_list = Set.put avaliable_list, proxy
-        # update proxy list
-        new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: new_invalid_list}
-      "fail" ->
-        # retry 3 times to ensure the proxy cannot work,
-        # so remove this proxy from invalid_list
-        # TODO remove proxy from ssdb
-        new_invalid_list = Set.delete invalid_list, proxy
-        new_state = %ProxyLists{avaliable: avaliable_list, invalid: new_invalid_list}
-    end
-
-    # will have problem when multiple call arrived
-    Process.send_after(:proxy_pool, :check_invalid_list, @interval)
-
-    {:noreply, new_state}
   end
 
   def query_proxy_pool do
