@@ -121,23 +121,45 @@ defmodule ProxyPoolWorker do
 
   def check_single_invalid(proxy, retry_time) when retry_time > 0 do
     Lager.info "check_single_invalid retry_time #{inspect retry_time}"
-    case HTTPoison.request(:get, @test_host, "", [],
-      [recv_timeout: 3000, connect_timeout: 2000, proxy: proxy]
-    ) do
-        {:ok, %HTTPoison.Response{status_code: code, body: _body, headers: _headers}} ->
-          case code do
-            200 ->
-              # callback check_invalid_list
-              send :proxy_pool, {:check_invalid_callback, "success", proxy}
-            _ ->
-              check_single_invalid(proxy, (retry_time - 1))
-          end
-        {:error, %HTTPoison.Error{reason: reason}} ->
-          Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
+    # case HTTPoison.request(:get, @test_host, "", [],
+    #   [recv_timeout: 3000, connect_timeout: 2000, proxy: proxy]
+    # ) do
+    #     {:ok, %HTTPoison.Response{status_code: code, body: _body, headers: _headers}} ->
+    #       case code do
+    #         200 ->
+    #           # callback check_invalid_list
+    #           send :proxy_pool, {:check_invalid_callback, "success", proxy}
+    #         _ ->
+    #           check_single_invalid(proxy, (retry_time - 1))
+    #       end
+    #     {:error, %HTTPoison.Error{reason: reason}} ->
+    #       Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
+    #       check_single_invalid(proxy, (retry_time - 1))
+    #      {:error, :badarg} ->
+    #        Lager.error "check_invalid error badarg"
+    # end
+    [http_type, host, port] = Regex.split(~r/\:/, proxy)
+
+    c_host = Regex.replace(~r/\/\//, host, "") |> String.to_char_list
+    c_port = String.to_integer port
+
+    try do
+      %HTTPotion.Response{body: body, status_code: code, headers: headers} =
+        HTTPotion.get(@test_host, [ibrowse: [ proxy_host: c_host, proxy_port: c_port]])
+
+      case code do
+        200 ->
+          # callback check_invalid_list
+          send :proxy_pool, {:check_invalid_callback, "success", proxy}
+        _ ->
           check_single_invalid(proxy, (retry_time - 1))
-         {:error, :badarg} ->
-           Lager.error "check_invalid error badarg"
+      end
+    rescue
+      e in HTTPotion.HTTPError -> e
+        Lager.error "HTTPotion error #{inspect e}"
+        check_single_invalid(proxy, (retry_time - 1))
     end
+
   end
 
   def check_single_invalid(proxy, 0) do

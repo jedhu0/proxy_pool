@@ -14,7 +14,7 @@ defmodule ProxyPool.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    apps = [:logger, :ssdb, :hackney, :httpoison, :cowboy]
+    apps = [:logger, :ssdb, :httpotion]
     mod = {:mod, {ProxyPool, []} }
 
     case Mix.env do
@@ -39,8 +39,10 @@ defmodule ProxyPool.Mixfile do
       { :ssdb, git: "https://github.com/chashu-code/ssdb-client-elixir.git"},
       { :lager, git: "git://github.com/basho/lager.git", tag: "3.0.1", override: true},
       { :exlager, git: "https://github.com/khia/exlager.git"},
-      { :cowboy, "~> 1.0.0"},
-      { :httpoison, "~> 0.7.2"}
+      # { :cowboy, "~> 1.0.0"},
+      # { :httpoison, "~> 0.7.2"}
+      { :ibrowse, github: "cmullaparthi/ibrowse", tag: "v4.1.2"},
+      { :httpotion, "~> 2.1.0"}
     ]
   end
 end
