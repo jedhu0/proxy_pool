@@ -79,6 +79,10 @@ defmodule ProxyPoolWorker do
     {:noreply, new_state}
   end
 
+  def handle_info(:check_invalid_list, nil) do
+    {:noreply, nil}
+  end
+
   def handle_info(:check_invalid_list, %ProxyLists{avaliable: _, invalid: invalid_list}=state) do
     Lager.info "invalid_list #{inspect invalid_list}"
     if Set.size(invalid_list) == 0 do

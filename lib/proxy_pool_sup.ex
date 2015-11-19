@@ -6,7 +6,7 @@ defmodule ProxyPoolSup do
   end
 
   def init(_conf) do
-    children = [worker(ProxyPoolWorker, [name: :proxy_pool])]
+    children = [worker(ProxyPoolWorker, [])]
 
     supervise(children, strategy: :one_for_one)
   end
