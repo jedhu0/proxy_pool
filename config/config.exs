@@ -27,17 +27,4 @@ use Mix.Config
 # Configuration from the imported file will override the ones defined
 # here (which is why it is important to import them last).
 #
-import_config "#{Mix.env}.exs"
-
-config :lager,
-  handlers: [
-    {:lager_file_backend, [
-        {:file, 'log/dev.log'}, {:level, :info}, {:formatter, :lager_default_formatter},
-        {:formatter_config, [:date, " ", :time, " |", :sev, "| ", :pid, " ", :message, "\n"]}
-      ]
-    }
-  ]
-
-config :exlager,
-  level: :debug,
-  truncation_size: 8096
+# import_config "#{Mix.env}.exs"

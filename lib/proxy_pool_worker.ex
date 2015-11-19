@@ -141,7 +141,7 @@ defmodule ProxyPoolWorker do
   end
 
   def query_proxy_pool do
-    case SSDB.query ["qrange", Application.get_env(:ssdb, :proxy_pool_key), "", ""] do
+    case SSDB.query ["qrange", Application.get_env(:proxy_pool, :ssdb_key), "", ""] do
       ["ok"] ->
         state = nil
       ["ok" | result]->
