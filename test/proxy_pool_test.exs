@@ -7,7 +7,7 @@ defmodule ProxyPoolTest do
 
   setup do
     # should use some mock method
-    SSDB.query ["qclear", Application.get_env(:ssdb, :proxy_pool_key), @default_ip]
+    SSDB.query ["qclear", Application.get_env(:ssdb, :proxy_pool_key)]
     SSDB.query ["qpush", Application.get_env(:ssdb, :proxy_pool_key), @default_ip]
 
     {:ok, _} = ProxyPool.start_link
@@ -51,5 +51,9 @@ defmodule ProxyPoolTest do
     SSDB.query ["qpush", Application.get_env(:ssdb, :proxy_pool_key), "127.0.0.1:8082", "127.0.0.1:8083"]
     assert :ok == ProxyPool.update
     assert ProxyPool.random != @default_ip
+  end
+
+  test "spawns check_invalid_list" do
+
   end
 end
