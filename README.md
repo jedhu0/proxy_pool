@@ -17,3 +17,20 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
         def application do
           [applications: [:proxy_pool]]
         end
+
+  3. APIs
+  ```elixir
+    # get random proxy from pool
+    iex(1)> ProxyPool.random
+    "127.0.0.1:8086"
+
+    # call the server if the proxy was invalid
+    iex(2)> p = ProxyPool.random
+    "127.0.0.1:8087"
+    iex(3)> ProxyPool.fail_notice(p)
+    :ok
+
+    # udpate the state with proxy_pool server with your ssdb updated
+    iex(4)> ProxyPool.update
+    :ok
+  ```
