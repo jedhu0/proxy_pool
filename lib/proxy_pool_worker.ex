@@ -84,7 +84,7 @@ defmodule ProxyPoolWorker do
   end
 
   def handle_info(:check_invalid_list, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
-    Lager.info "invalid_list #{inspect invalid_list}"
+    # Lager.info "invalid_list #{inspect invalid_list}"
 
     invalid_list |> Set.to_list |> Enum.map fn p ->
       spawn_link(fn -> check_single_invalid(p, @retry_time) end)
