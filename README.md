@@ -1,6 +1,8 @@
 # ProxyPool
 
-**TODO: Add description**
+**Warning**
+- This tool should work with ssdb
+- Ensure that you had save your proxys in ssdb
 
 ## Installation
 
@@ -33,4 +35,10 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     # udpate the state with proxy_pool server with your ssdb updated
     iex(4)> ProxyPool.update
     :ok
+  ```
+
+  4. config
+  ```elixir
+    config :proxy_pool,
+      ssdb_key: 'your_proxys_key_in_ssdb'
   ```
