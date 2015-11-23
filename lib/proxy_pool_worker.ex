@@ -124,7 +124,7 @@ defmodule ProxyPoolWorker do
   end
 
   def check_single_invalid(proxy, retry_time) when retry_time > 0 do
-    Lager.info "check_single_invalid retry_time #{inspect retry_time}"
+    # Lager.info "check_single_invalid retry_time #{inspect retry_time}"
     case HTTPoison.request(:get, @test_host, "", [],
       [recv_timeout: 3000, connect_timeout: 2000, proxy: proxy]
     ) do
@@ -137,7 +137,7 @@ defmodule ProxyPoolWorker do
               check_single_invalid(proxy, (retry_time - 1))
           end
         {:error, %HTTPoison.Error{reason: reason}} ->
-          Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
+          # Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
           check_single_invalid(proxy, (retry_time - 1))
     end
   end
