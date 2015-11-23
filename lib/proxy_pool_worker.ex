@@ -36,7 +36,7 @@ defmodule ProxyPoolWorker do
 
   def handle_call(:random, _from, nil) do
     state = %ProxyLists{}
-    {:reply, :no_proxy_data, state}
+    {:reply, nil, state}
   end
 
   def handle_call(:random, _from, %ProxyLists{avaliable: avaliable_list, invalid: _}=state) do
