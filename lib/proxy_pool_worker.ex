@@ -42,7 +42,7 @@ defmodule ProxyPoolWorker do
   def handle_call(:random, _from, %ProxyLists{avaliable: avaliable_list, invalid: _}=state) do
     # the situation that proxy been move from avaliable_list to invalid_list all
     if  Set.size(avaliable_list) <= 0 do
-      random_proxy = :no_proxy_data
+      random_proxy = nil
     else
       random_proxy = avaliable_list |> Enum.random
     end
