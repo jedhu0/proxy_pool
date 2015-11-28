@@ -8,6 +8,7 @@
   "ibrowse": {:git, "https://github.com/cmullaparthi/ibrowse.git", "ea3305d21f37eced4fac290f64b068e56df7de80", [tag: "v4.1.2"]},
   "idna": {:hex, :idna, "1.0.2"},
   "lager": {:git, "git://github.com/basho/lager.git", "cbf6679c6a693772fd1629c9cdc093e4c6c4ebf8", [tag: "3.0.1"]},
+  "poison": {:hex, :poison, "1.5.0"},
   "ranch": {:hex, :ranch, "1.2.0"},
   "ssdb": {:git, "https://github.com/chashu-code/ssdb-client-elixir.git", "964287ce4ca055e20143db13617c25301e29b2c8", []},
   "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"}}

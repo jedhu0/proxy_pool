@@ -40,7 +40,8 @@ defmodule ProxyPool.Mixfile do
       { :lager, git: "git://github.com/basho/lager.git", tag: "3.0.1", override: true},
       { :exlager, git: "https://github.com/khia/exlager.git"},
       { :cowboy, "~> 1.0.0"},
-      { :httpoison, "~> 0.7.2"}
+      { :httpoison, "~> 0.7.2"},
+      { :poison, "~> 1.5"},
     ]
   end
 end
