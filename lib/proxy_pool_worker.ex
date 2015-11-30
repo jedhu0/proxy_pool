@@ -80,15 +80,16 @@ defmodule ProxyPoolWorker do
       {:ok, result} when is_nil(result) ->
         new_state = state
       {:ok, result} ->
-        if Set.disjoint?(result.avaliable, invalid_list) do
-          new_state = %ProxyLists{avaliable: result.avaliable, invalid: invalid_list}
-        else
-          common_invalid_proxys = Set.intersection(result.avaliable, invalid_list) |> HashSet.to_list
-          new_avaliable_list = ((result.avaliable |> HashSet.to_list) -- common_invalid_proxys)
-            |> Enum.into(HashSet.new)
-          # invalid_list should continue to deal with check queue
-          new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
-        end
+        new_state = result
+        # if Set.disjoint?(result.avaliable, invalid_list) do
+        #   new_state = %ProxyLists{avaliable: result.avaliable, invalid: invalid_list}
+        # else
+        #   common_invalid_proxys = Set.intersection(result.avaliable, invalid_list) |> HashSet.to_list
+        #   new_avaliable_list = ((result.avaliable |> HashSet.to_list) -- common_invalid_proxys)
+        #     |> Enum.into(HashSet.new)
+        #   # invalid_list should continue to deal with check queue
+        #   new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
+        # end
     end
 
     {:noreply, new_state}
