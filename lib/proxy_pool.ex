@@ -9,8 +9,8 @@ defmodule ProxyPool do
     ProxyPoolWorker.random(source)
   end
 
-  def fail_notice(proxy) do
-    ProxyPoolWorker.fail_notice proxy
+  def fail_notice(source, proxy) do
+    ProxyPoolWorker.fail_notice source, proxy
   end
 
   def update do

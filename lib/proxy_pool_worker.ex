@@ -25,8 +25,8 @@ defmodule ProxyPoolWorker do
   end
 
   # proxy cannot work
-  def fail_notice(proxy) do
-    GenServer.cast :proxy_pool, {:fail_notice, proxy}
+  def fail_notice(source, proxy) do
+    GenServer.cast :proxy_pool, {:fail_notice, source, proxy}
   end
 
   # update the proxy list api
@@ -50,21 +50,29 @@ defmodule ProxyPoolWorker do
       tail = rem(index, count)
 
       random_proxy = elem(source_data[:proxys], tail)
-      new_avaliable_list = Dict.put avaliable_list, source, %{index: index+1, proxys: source_data[:proxys]}
+      new_avaliable_list = Dict.put avaliable_list, source,
+        %{index: index+1, proxys: source_data[:proxys]}
       state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
     end
 
     {:reply, random_proxy, state}
   end
 
-  def handle_cast({:fail_notice, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=_state) do
+  def handle_cast({:fail_notice, source, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
     # move the proxy which had problem from avaliable_list o invalid_list
-    new_avaliable_list = Set.delete avaliable_list, proxy
-    new_invalid_list = Set.put invalid_list, proxy
-    # update proxy list
-    new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: new_invalid_list}
+    source_data = avaliable_list[source]
+    unless is_nil(source_data) do
+      new_proxys = ((source_data[:proxys] |> Tuple.to_list) -- [proxy]) |> List.to_tuple
+      new_invalid_list = Set.put invalid_list, proxy
+      # update proxy list
+      new_avaliable_list = Dict.put avaliable_list, source,
+        %{index: source_data[:index], proxys: new_proxys}
 
-    {:noreply, new_state}
+      state = %ProxyLists{avaliable: new_avaliable_list, invalid: new_invalid_list}
+      # call the check_invalid server
+    end
+
+    {:noreply, state}
   end
 
   def handle_cast(:update, %ProxyLists{avaliable: _, invalid: invalid_list}=state) do
