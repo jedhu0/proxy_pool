@@ -1,7 +1,7 @@
 require Lager
 
 defmodule ProxyLists do
-  defstruct avaliable: HashSet.new, invalid: HashSet.new
+  defstruct avaliable: %{}, invalid: HashSet.new
 end
 
 defmodule ProxyPoolWorker do
@@ -20,8 +20,8 @@ defmodule ProxyPoolWorker do
   end
 
   # get random avaliable proxy
-  def random do
-    GenServer.call :proxy_pool, :random
+  def random(source) do
+    GenServer.call :proxy_pool, {:random, source}
   end
 
   # proxy cannot work
@@ -39,12 +39,19 @@ defmodule ProxyPoolWorker do
     {:reply, nil, state}
   end
 
-  def handle_call(:random, _from, %ProxyLists{avaliable: avaliable_list, invalid: _}=state) do
+  def handle_call({:random, source}, _from, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
     # the situation that proxy been move from avaliable_list to invalid_list all
-    if  Set.size(avaliable_list) <= 0 do
+    source_data = avaliable_list[source]
+    if is_nil(source_data) || tuple_size(source_data[:proxys]) <= 0 do
       random_proxy = nil
     else
-      random_proxy = avaliable_list |> Enum.random
+      index = source_data[:index]
+      count = tuple_size source_data[:proxys]
+      tail = rem(index, count)
+
+      random_proxy = elem(source_data[:proxys], tail)
+      new_avaliable_list = Dict.put avaliable_list, source, %{index: index+1, proxys: source_data[:proxys]}
+      state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
     end
 
     {:reply, random_proxy, state}
@@ -149,11 +156,16 @@ defmodule ProxyPoolWorker do
   end
 
   def query_proxy_pool do
-    case SSDB.query ["qrange", Application.get_env(:proxy_pool, :ssdb_key), "", ""] do
+    case SSDB.query ["hgetall", Application.get_env(:proxy_pool, :ssdb_key)] do
       ["ok"] ->
         state = nil
       ["ok" | result]->
-        avaliable_list =  result |> Enum.uniq |> Enum.into(HashSet.new)
+        avaliable_list = result |> Stream.chunk(2) |> Enum.reduce(%{}, fn(x, acc) ->
+          [source_key | [proxys]] = x
+          parsed_proxys = proxys |> Poison.decode! |> Enum.uniq |> List.to_tuple
+          Dict.put acc, String.to_atom(source_key), %{proxys: parsed_proxys, index: 0}
+        end)
+
         state = %ProxyLists{avaliable: avaliable_list}
       reason when is_tuple(reason) or is_list(reason) ->
         Lager.error "qrange from ssdb error ~s", reason

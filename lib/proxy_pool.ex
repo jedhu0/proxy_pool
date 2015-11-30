@@ -5,8 +5,8 @@ defmodule ProxyPool do
     {:ok, _} = ProxyPoolSup.start_link
   end
 
-  def random do
-    ProxyPoolWorker.random
+  def random(source) do
+    ProxyPoolWorker.random(source)
   end
 
   def fail_notice(proxy) do
