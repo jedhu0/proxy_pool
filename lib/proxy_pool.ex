@@ -2,6 +2,7 @@ defmodule ProxyPool do
   use Application
 
   def start(_type, _args) do
+    CheckInvalidSup.start_link
     {:ok, _} = ProxyPoolSup.start_link
   end
 
