@@ -1,21 +1,17 @@
 require Lager
 
 defmodule ProxyLists do
-  defstruct avaliable: %{}, invalid: HashSet.new
+  defstruct avaliable: %{}
 end
 
 defmodule ProxyPoolWorker do
   use GenServer
-  @interval 3000
-  @retry_time 3
-  @test_host "http://www.baidu.com"
 
   def start_link do
     GenServer.start_link(__MODULE__, :ok, [name: :proxy_pool])
   end
 
   def init(_) do
-    Process.send_after(:proxy_pool, :check_invalid_list, @interval)
     {:ok, _} = query_proxy_pool
   end
 
@@ -39,7 +35,7 @@ defmodule ProxyPoolWorker do
     {:reply, nil, state}
   end
 
-  def handle_call({:random, source}, _from, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
+  def handle_call({:random, source}, _from, %ProxyLists{avaliable: avaliable_list}=state) do
     # the situation that proxy been move from avaliable_list to invalid_list all
     source_data = avaliable_list[source]
     if is_nil(source_data) || tuple_size(source_data[:proxys]) <= 0 do
@@ -52,30 +48,30 @@ defmodule ProxyPoolWorker do
       random_proxy = elem(source_data[:proxys], tail)
       new_avaliable_list = Dict.put avaliable_list, source,
         %{index: index+1, proxys: source_data[:proxys]}
-      state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
+      state = %ProxyLists{avaliable: new_avaliable_list}
     end
 
     {:reply, random_proxy, state}
   end
 
-  def handle_cast({:fail_notice, source, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
+  def handle_cast({:fail_notice, source, proxy}, %ProxyLists{avaliable: avaliable_list}=state) do
     # move the proxy which had problem from avaliable_list o invalid_list
     source_data = avaliable_list[source]
     unless is_nil(source_data) do
       new_proxys = ((source_data[:proxys] |> Tuple.to_list) -- [proxy]) |> List.to_tuple
-      new_invalid_list = Set.put invalid_list, proxy
       # update proxy list
       new_avaliable_list = Dict.put avaliable_list, source,
         %{index: source_data[:index], proxys: new_proxys}
 
-      state = %ProxyLists{avaliable: new_avaliable_list, invalid: new_invalid_list}
+      state = %ProxyLists{avaliable: new_avaliable_list}
       # call the check_invalid server
+      CheckInvalidWorker.push(source, proxy)
     end
 
     {:noreply, state}
   end
 
-  def handle_cast(:update, %ProxyLists{avaliable: _, invalid: invalid_list}=state) do
+  def handle_cast(:update, state) do
     case query_proxy_pool do
       {:ok, result} when is_nil(result) ->
         new_state = state
@@ -95,36 +91,21 @@ defmodule ProxyPoolWorker do
     {:noreply, new_state}
   end
 
-  def handle_info(:check_invalid_list, nil) do
-    {:noreply, nil}
+  def check_invalid_callback(result, source, proxy) do
+    GenServer.cast :proxy_pool, {:check_invalid_callback, result, source, proxy}
   end
 
-  def handle_info(:check_invalid_list, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
-    # Lager.info "invalid_list #{inspect invalid_list}"
-
-    invalid_list |> Set.to_list |> Enum.map fn p ->
-      spawn_link(fn -> check_single_invalid(p, @retry_time) end)
-    end
-
-    if Set.size(invalid_list) == 0 do
-      Process.send_after(:proxy_pool, :check_invalid_list, @interval)
-    else
-      new_invalid_list = HashSet.new
-      state = %ProxyLists{avaliable: avaliable_list, invalid: new_invalid_list}
-    end
-
-    {:noreply, state}
-  end
-
-  def handle_info({:check_invalid_callback, result, proxy}, %ProxyLists{avaliable: avaliable_list, invalid: invalid_list}=state) do
+  def handle_cast({:check_invalid_callback, result, source, proxy}, %ProxyLists{avaliable: avaliable_list}=state) do
     # Lager.info "invalid_list -> #{Set.size(invalid_list)}"
 
     case result do
       "success" ->
-        # new_invalid_list = Set.delete invalid_list, proxy
-        new_avaliable_list = Set.put avaliable_list, proxy
+        source_data = avaliable_list[source]
+        new_proxys = Tuple.append source_data[:proxys], proxy
+        new_avaliable_list = Dict.put avaliable_list, source,
+          %{index: source_data[:index], proxys: new_proxys}
         # update proxy list
-        new_state = %ProxyLists{avaliable: new_avaliable_list, invalid: invalid_list}
+        new_state = %ProxyLists{avaliable: new_avaliable_list}
       "fail" ->
         # retry 3 times to ensure the proxy cannot work,
         # so remove this proxy from invalid_list
@@ -133,35 +114,7 @@ defmodule ProxyPoolWorker do
         new_state = state
     end
 
-    # will have problem when multiple call arrived
-    Process.send_after(:proxy_pool, :check_invalid_list, @interval)
-
     {:noreply, new_state}
-  end
-
-  def check_single_invalid(proxy, retry_time) when retry_time > 0 do
-    # Lager.info "check_single_invalid retry_time #{inspect retry_time}"
-    case HTTPoison.request(:get, @test_host, "", [],
-      [recv_timeout: 3000, connect_timeout: 2000, proxy: proxy]
-    ) do
-        {:ok, %HTTPoison.Response{status_code: code, body: _body, headers: _headers}} ->
-          case code do
-            200 ->
-              # callback check_invalid_list
-              send :proxy_pool, {:check_invalid_callback, "success", proxy}
-            _ ->
-              check_single_invalid(proxy, (retry_time - 1))
-          end
-        {:error, %HTTPoison.Error{reason: reason}} ->
-          # Lager.error "check_invalid error #{inspect proxy} -> reason#{inspect reason}"
-          check_single_invalid(proxy, (retry_time - 1))
-    end
-  end
-
-  def check_single_invalid(proxy, 0) do
-    Lager.info "check_single_invalid proxy -> #{inspect proxy} fail"
-    # callback check_invalid_list
-    send :proxy_pool, {:check_invalid_callback, "fail", proxy}
   end
 
   def query_proxy_pool do
