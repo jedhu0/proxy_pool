@@ -18,13 +18,12 @@ defmodule CheckInvalidWorker do
 
   def handle_cast({:check, source, invalid_proxy}, state) do
     spawn_link(fn -> check_single_invalid(source, invalid_proxy, @retry_time) end)
-    Lager.info "check_invalid_list spawn_link"
     {:noreply, state}
   end
 
   def check_single_invalid(source, proxy, retry_time) when retry_time > 0 do
     # Lager.info "check_single_invalid retry_time #{inspect retry_time}"
-    url = Application.get_env(:test_source, source)
+    url = Application.get_env(:proxy_pool, :test_source)[source]
 
     if is_nil(url) do
       Lager.error "check_single_invalid source error -> #{inspect source}"

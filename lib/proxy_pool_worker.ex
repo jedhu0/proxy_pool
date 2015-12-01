@@ -105,7 +105,9 @@ defmodule ProxyPoolWorker do
         new_avaliable_list = Dict.put avaliable_list, source,
           %{index: source_data[:index], proxys: new_proxys}
         # update proxy list
+        Lager.info "check_invalid_callback success proxy -> #{inspect proxy}"
         new_state = %ProxyLists{avaliable: new_avaliable_list}
+        Lager.info "check_invalid_callback success state -> #{inspect new_state}"
       "fail" ->
         # retry 3 times to ensure the proxy cannot work,
         # so remove this proxy from invalid_list
