@@ -30,7 +30,7 @@ defmodule ProxyPoolWorker do
     GenServer.cast :proxy_pool, :update
   end
 
-  def handle_call(:random, _from, nil) do
+  def handle_call({:random, source}, _from, nil) do
     state = %ProxyLists{}
     {:reply, nil, state}
   end
