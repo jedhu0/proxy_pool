@@ -154,7 +154,7 @@ defmodule ProxyPoolWorker do
     catch
       :exit, reason ->
         Lager.error("fail to connect ssdb, 5s later retry! reason -> #{inspect reason}")
-        Process.send_after(:proxy_pool, :init_store, 5)
+        Process.send_after(:proxy_pool, :init_store, 5000)
 
       nil
     end
