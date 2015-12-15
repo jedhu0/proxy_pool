@@ -1,6 +1,6 @@
 %{"cowboy": {:hex, :cowboy, "1.0.4"},
   "cowlib": {:hex, :cowlib, "1.0.2"},
-  "exlager": {:git, "https://github.com/khia/exlager.git", "dca404300b04d2ad8f42e9ecc6f4c757e169071f", []},
+  "exlager": {:git, "https://github.com/khia/exlager.git", "abb13435a540731b8b9c5f649f4d94f11a27c1f7", []},
   "goldrush": {:git, "git://github.com/DeadZen/goldrush.git", "64864ba7fcf40988361340e48680b49a2c2938cf", [tag: "0.1.7"]},
   "hackney": {:hex, :hackney, "1.3.2"},
   "httpoison": {:hex, :httpoison, "0.7.5"},
@@ -10,5 +10,5 @@
   "lager": {:git, "git://github.com/basho/lager.git", "cbf6679c6a693772fd1629c9cdc093e4c6c4ebf8", [tag: "3.0.1"]},
   "poison": {:hex, :poison, "1.5.0"},
   "ranch": {:hex, :ranch, "1.2.0"},
-  "ssdb": {:git, "https://github.com/chashu-code/ssdb-client-elixir.git", "964287ce4ca055e20143db13617c25301e29b2c8", []},
-  "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.5"}}
+  "ssdb": {:git, "https://github.com/chashu-code/ssdb-client-elixir.git", "283d1c23e7ce6f212a279798dcc90dfcd61681ff", []},
+  "ssl_verify_hostname": {:hex, :ssl_verify_hostname, "1.0.6"}}
