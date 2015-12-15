@@ -12,7 +12,9 @@ defmodule ProxyPoolWorker do
   end
 
   def init(_) do
-    {:ok, _} = query_proxy_pool
+    :erlang.process_flag(:trap_exit, true)
+    Process.send_after(:proxy_pool, :init_store, 1)
+    {:ok, nil}
   end
 
   # get random avaliable proxy
@@ -91,6 +93,17 @@ defmodule ProxyPoolWorker do
     {:noreply, new_state}
   end
 
+  def handle_info(:init_store, state) do
+    case query_proxy_pool do
+      {:ok, result} when is_nil(result) ->
+        new_state = nil
+      {:ok, result} ->
+        new_state = result
+    end
+
+    {:noreply, new_state}
+  end
+
   def check_invalid_callback(result, source, proxy) do
     GenServer.cast :proxy_pool, {:check_invalid_callback, result, source, proxy}
   end
@@ -122,20 +135,28 @@ defmodule ProxyPoolWorker do
   end
 
   def query_proxy_pool do
-    case SSDB.query ["hgetall", Application.get_env(:proxy_pool, :ssdb_key)] do
-      ["ok"] ->
-        state = nil
-      ["ok" | result]->
-        avaliable_list = result |> Stream.chunk(2) |> Enum.reduce(%{}, fn(x, acc) ->
-          [source_key | [proxys]] = x
-          parsed_proxys = proxys |> Poison.decode! |> Enum.uniq |> List.to_tuple
-          Dict.put acc, String.to_atom(source_key), %{proxys: parsed_proxys, index: 0}
-        end)
+    state = try do
+      case SSDB.query ["hgetall", Application.get_env(:proxy_pool, :ssdb_key)] do
+        ["ok"] ->
+          nil
+        ["ok" | result]->
+          avaliable_list = result |> Stream.chunk(2) |> Enum.reduce(%{}, fn(x, acc) ->
+            [source_key | [proxys]] = x
+            parsed_proxys = proxys |> Poison.decode! |> Enum.uniq |> List.to_tuple
+            Dict.put acc, String.to_atom(source_key), %{proxys: parsed_proxys, index: 0}
+          end)
 
-        state = %ProxyLists{avaliable: avaliable_list}
-      reason when is_tuple(reason) or is_list(reason) ->
-        Lager.error "qrange from ssdb error ~s", reason
-        state = nil
+          %ProxyLists{avaliable: avaliable_list}
+        reason when is_tuple(reason) or is_list(reason) ->
+          Lager.error "qrange from ssdb error ~s", reason
+          nil
+      end
+    catch
+      :exit, reason ->
+        Lager.error("fail to connect ssdb, 5s later retry! reason -> #{inspect reason}")
+        Process.send_after(:proxy_pool, :init_store, 5)
+
+      nil
     end
 
     {:ok, state}
